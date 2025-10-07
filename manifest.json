@@ -1,0 +1,10 @@
+{
+    "Name": "RLMLFishing",
+    "Author": "Fishyfins",
+    "Version": "1.0.0",
+    "Description": "This mod aims to train a model that will learn how to fish",
+    "UniqueID": "Fishyfins.RLMLFishing",
+    "EntryDll": "RLMLFishing.dll",
+    "MinimumApiVersion": "4.0.0",
+    "UpdateKeys": []
+}
