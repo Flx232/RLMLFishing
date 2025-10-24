@@ -37,11 +37,32 @@ namespace RLMLFishing
                 return;
             if (oldXP is null)
                 oldXP = Game1.player.experiencePoints[1];
-            string docPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            int? newXP = oldXP;
+            string docPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             Action fish = GetFishingState(rod) switch
             {
-                FishingState.Playing => () => bobberInfo = castBobber((BobberBar)Game1.activeClickableMenu),
-                FishingState.FishCaught => () => catchInfo = reward(rod),
+                FishingState.Playing => async () =>
+                {
+                    bobberInfo = castBobber((BobberBar)Game1.activeClickableMenu);
+                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "Output.txt")))
+                    {
+                        await outputFile.WriteLineAsync(bobberInfo);
+                    }
+                },
+                FishingState.FishCaught => async () =>
+                {
+                    catchInfo = reward(rod);
+                    newXP = Game1.player.experiencePoints[1];
+                    if (newXP - oldXP != 0)
+                    {
+                        oldXP = newXP;
+                        catchInfo += $"{newXP - oldXP}";
+                    }
+                    using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "Output.txt")))
+                    {
+                        await outputFile.WriteLineAsync(catchInfo);
+                    }
+                },
                 _ => () => { }
                 ,
             };
@@ -51,14 +72,14 @@ namespace RLMLFishing
         {
             bool fishIsObject = rod.whichFish.TypeIdentifier == "(O)";
             string name = (fishIsObject ? rod.whichFish.GetParsedOrErrorData().DisplayName : "???");
-            this.Monitor.Log($"{rod.fishCaught}, {rod.fishQuality}, {name}", LogLevel.Debug);
+            // this.Monitor.Log($"{rod.fishCaught}, {rod.fishQuality}, {name}", LogLevel.Debug);
             return $"{rod.fishCaught}, {rod.fishQuality}, {name}";
         }
 
         private string castBobber(BobberBar bobberBar)
         {
             bool treasureInBar = bobberBar.treasurePosition + 12f <= bobberBar.bobberBarPos - 32f + (float)bobberBar.bobberBarHeight && bobberBar.treasurePosition - 16f >= bobberBar.bobberBarPos - 32f;
-            this.Monitor.Log($"{bobberBar.bobberInBar}, {treasureInBar}, {bobberBar.bobberPosition}, {bobberBar.bobberTargetPosition}, {bobberBar.treasurePosition}, {bobberBar.distanceFromCatching}, {bobberBar.treasureCaught}, {bobberBar.fishShake.X}, {bobberBar.fishShake.Y}", LogLevel.Debug);
+            // this.Monitor.Log($"{bobberBar.bobberInBar}, {treasureInBar}, {bobberBar.bobberPosition}, {bobberBar.bobberTargetPosition}, {bobberBar.treasurePosition}, {bobberBar.distanceFromCatching}, {bobberBar.treasureCaught}, {bobberBar.fishShake.X}, {bobberBar.fishShake.Y}", LogLevel.Debug);
             return $"{bobberBar.bobberInBar}, {treasureInBar}, {bobberBar.bobberPosition}, {bobberBar.bobberTargetPosition}, {bobberBar.treasurePosition}, {bobberBar.distanceFromCatching}, {bobberBar.treasureCaught}, {bobberBar.fishShake.X}, {bobberBar.fishShake.Y}";
         }
     }
