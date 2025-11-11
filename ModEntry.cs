@@ -3,26 +3,52 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Xml.XPath;
-using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
 using StardewValley.Tools;
+using HarmonyLib;
 
 namespace RLMLFishing
 {
     internal sealed class ModEntry : Mod
     {
         private int? oldXP = null;
-        private string bobberInfo = null;
-        private string catchInfo = null;
+        private string bobberInfo = "";
+        private string catchInfo = "";
+        private static bool _shouldPressFishingButton = false;
+        private static bool _isInBobberBarUpdate = false;
+
         public override void Entry(IModHelper helper)
         {
+            var harmony = new Harmony(ModManifest.UniqueID);
+            harmony.Patch(
+                original: AccessTools.Method(typeof(Game1), "isOneOfTheseKeysDown", new Type[] { typeof(KeyboardState), typeof(InputButton[]) }),
+                prefix: new HarmonyMethod(typeof(ModEntry), nameof(Pre_Game1_IsOneOfTheseKeysDown))
+            );
+            harmony.Patch(
+                original: AccessTools.Method(typeof(BobberBar), "update"),
+                prefix: new HarmonyMethod(typeof(ModEntry), nameof(Pre_BobberBar_Update)),
+                postfix: new HarmonyMethod(typeof(ModEntry), nameof(Post_BobberBar_Update))
+            );
             helper.Events.GameLoop.UpdateTicked += this.OnUpdate;
         }
+        public static void Pre_BobberBar_Update(BobberBar __instance) => _isInBobberBarUpdate = true;
+        public static void Post_BobberBar_Update() => _isInBobberBarUpdate = false;
 
+
+        public static bool Pre_Game1_IsOneOfTheseKeysDown(KeyboardState state, InputButton[] keys, ref bool __result)
+        {
+            if (_isInBobberBarUpdate && keys != null && keys.Contains(Game1.options.useToolButton[0]))
+            {
+                __result = _shouldPressFishingButton; 
+                return false;
+            }
+            return true;
+        }
         private enum FishingState { Idle, Playing, FishCaught, FishEscaped }
         private FishingState GetFishingState(FishingRod rod) => true switch
         {
@@ -30,6 +56,23 @@ namespace RLMLFishing
             _ when rod.fishCaught => FishingState.FishCaught,
             _ => FishingState.Idle
         };
+
+        private void readFile(string filePath)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    string content = File.ReadAllText(filePath).Trim();
+                    _shouldPressFishingButton = bool.Parse(content);
+                    this.Monitor.Log($"{_shouldPressFishingButton}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error reading boolean from file: {ex.Message}");
+            }
+        }
 
         private async void OnUpdate(object? sender, UpdateTickedEventArgs e)
         {
@@ -43,12 +86,14 @@ namespace RLMLFishing
             {
                 FishingState.Playing => async () =>
                 {
+                    readFile(Path.Combine(docPath, "Input.txt"));
                     bobberInfo = castBobber((BobberBar)Game1.activeClickableMenu);
                     using (StreamWriter outputFile = new StreamWriter(Path.Combine(docPath, "Output.txt")))
                     {
                         await outputFile.WriteLineAsync(bobberInfo);
                     }
-                },
+                }
+                ,
                 FishingState.FishCaught => async () =>
                 {
                     catchInfo = reward(rod);
@@ -62,7 +107,8 @@ namespace RLMLFishing
                     {
                         await outputFile.WriteLineAsync(catchInfo);
                     }
-                },
+                }
+                ,
                 _ => () => { }
                 ,
             };
