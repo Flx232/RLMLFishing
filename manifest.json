@@ -1,10 +1,10 @@
 {
-    "Name": "RLMLFishing",
-    "Author": "Fishyfins",
-    "Version": "1.0.0",
-    "Description": "This mod aims to train a model that will learn how to fish",
-    "UniqueID": "Fishyfins.RLMLFishing",
-    "EntryDll": "RLMLFishing.dll",
-    "MinimumApiVersion": "4.0.0",
-    "UpdateKeys": []
+  "Name": "RL_Fishing",
+  "Author": "Akash Basu",
+  "Version": "1.0.0",
+  "Description": "A simple mod that demonstrates SMAPI basics",
+  "UniqueID": "Akash.RL_Fishing",
+  "EntryDll": "RL_Fishing.dll",
+  "MinimumApiVersion": "3.18.0",
+  "UpdateKeys": []
 }

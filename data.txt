@@ -1,0 +1,9 @@
+[14:30:51 INFO  RL_Fishing] RL Agent connected!
+2025-11-12 14:30:51.780 StardewModdingAPI[31077:1101230] +[IMKClient subclass]: chose IMKClient_Modern
+2025-11-12 14:30:51.780 StardewModdingAPI[31077:1101230] +[IMKInputSession subclass]: chose IMKInputSession_Modern
+[14:30:51 TRACE game] Signing into GalaxySDK
+[14:30:51 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
+src/steamnetworkingsockets/clientlib/steamnetworkingsockets_lowlevel.cpp (2535) : Assertion Failed: Extra control data returned besides TOS?  0x0/0x1b
+src/steamnetworkingsockets/clientlib/steamnetworkingsockets_lowlevel.cpp (2535) : Assertion Failed: Extra control data returned besides TOS?  0x0/0x1b
+src/steamnetworkingsockets/clientlib/steamnetworkingsockets_lowlevel.cpp (2541) : No control data returned even though we asked for TOS?
+src/steamnetworkingsockets/clientlib/steamnetworkingsockets_lowlevel.cpp (2541) : No control data returned even though we asked for TOS?
