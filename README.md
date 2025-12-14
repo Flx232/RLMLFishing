@@ -156,5 +156,5 @@ USE_AUGMENTED_STATE = True  # 7D state (error + velocities + context)
 ## Contact
 
 For questions or issues:
-- Akash Basu: ab3334@columbia.edu
-- Frank Xu: fx65@columbia.edu
+- Akash Basu: ab3334@cornell.edu
+- Frank Xu: fx65@cornell.edu
