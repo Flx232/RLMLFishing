@@ -11,4 +11,5 @@ Step 3. Once SMAPI is configured, Unzip the RLMLFishing and move the contents to
 Step 4. Open up Stardew Running SMAPI. If you are running windows, the shortcut is in the same Stardew Valley folder as the mods folder. Though you can also configure Steam to always star up the modded version.
 Step 4.1 If you are starting a new game, it is recommended after you get the fishing rod to fish and catch it yourself once. This will finish the fishing tutorial and allow the Q_learning model to start learning real scenarios.
 Step 5. Finally, open up the terminal, go to the directory containing q_learning.py and run the script.
+Step 5.1 Or you can run the DQN.py file, which should be located in the same directory.
 Step 6. Find the nearest body of water with a fishing pole and start running the experiment
