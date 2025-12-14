@@ -1,5 +1,4 @@
 [HEADER]MODE,TICK,EPISODE,BAR_POS,FISH_POS,REWARD,FORCE,Q_HOLD,EPSILON,TD_ERROR
-Running Q-Learning Agent in AUGMENTED-3D mode
 [DATA]AUGMENTED-3D,1,0,0.0000,0.0000,1.0000,-0.2500,0.0000,0.49997500,0.0000
 [DATA]AUGMENTED-3D,2,0,520.0000,508.0000,0.8869,0.0000,0.0009,0.49995000,0.8869
 [DATA]AUGMENTED-3D,3,0,520.0000,508.0000,0.8869,-0.2950,0.0009,0.49992500,0.8878
@@ -21947,57 +21946,3 @@ Running Q-Learning Agent in AUGMENTED-3D mode
 [DATA]AUGMENTED-3D,94,99,516.6522,332.5186,0.0400,-0.2588,0.3970,0.27186153,-0.1075
 [DATA]AUGMENTED-3D,95,99,255.5273,396.3574,0.0400,-0.5833,0.3681,0.27184794,-0.0380
 [DATA]AUGMENTED-3D,96,99,485.4983,498.2017,0.8807,-0.3537,0.3430,0.27183434,0.9310
-
-
-================================================================================
-Q-TABLE SUMMARY (100 EPISODES)
-================================================================================
-Total unique states visited: 5
-Total state-action transitions: 21947
-Total data points: 21947
-
-STATE KEY FORMAT: error_bin_rod_bin_difficulty_bin
-  Error bins: 0=<-50, 1=-50 to -20, 2=-20 to 20, 3=20 to 50, 4=>50
-  Rod bins: 0=Training, 1=Bamboo, 2=Fiberglass, 3=Iridium
-  Difficulty bins: 0=Easy(<50), 1=Medium(<80), 2=Hard(>=80)
-
---------------------------------------------------------------------------------
-State           Q(Release)      Q(Hold)         Visits     Best Action    
---------------------------------------------------------------------------------
-2_2_1                   0.9077         0.9061      5793        Release
-4_2_1                   0.1107         0.0736      5695        Release
-0_2_1                   0.0701         0.1215      4776           Hold
-3_2_1                   0.5350         0.5137      3562        Release
-1_2_1                   0.5318         0.5007      2121        Release
---------------------------------------------------------------------------------
-
-Q-VALUE STATISTICS:
-  Release action Q-values:
-    Mean: 0.4311
-    Std:  0.3102
-    Min:  0.0701
-    Max:  0.9077
-
-  Hold action Q-values:
-    Mean: 0.4231
-    Std:  0.3035
-    Min:  0.0736
-    Max:  0.9061
-
-LEARNED POLICY:
-  Very Low (< -50)          → HOLD     (Q_release=0.0701, Q_hold=0.1215)
-  Low (-50 to -20)          → RELEASE  (Q_release=0.5318, Q_hold=0.5007)
-  Centered (-20 to 20)      → RELEASE  (Q_release=0.9077, Q_hold=0.9061)
-  High (20 to 50)           → RELEASE  (Q_release=0.5350, Q_hold=0.5137)
-  Very High (> 50)          → RELEASE  (Q_release=0.1107, Q_hold=0.0736)
-
-POLICY INTERPRETATION:
-  - When fish is centered (-20 to 20): Both actions equally good → Agent learned optimal balance
-  - When fish is very low (< -50): Hold bar up → Correct strategy
-  - When fish is high (20-50): Hold bar up → Chase the fish
-  - When fish is very high (> 50): Release → Let gravity bring bar down
-  - When fish is low (-50 to -20): Release → Let bar drop slightly
-
-================================================================================
-END OF Q-LEARNING DATA
-================================================================================

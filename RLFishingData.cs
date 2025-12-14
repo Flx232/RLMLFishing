@@ -39,9 +39,8 @@ public class RLFishingData
     public float FishTargetPosition { get; set; } 
     public float BobberBarVelocity { get; set; }
     public float FishVelocity { get; set; }
-    public float DistanceFromCatching { get; set; } // distance to fill the catch meter (0.0 to 1.0)
+    public float DistanceFromCatching { get; set; } 
 
-    // AUGMENTED STATE: Contextual variables for state augmentation experiments
     public string RodType { get; set; }          // Training Rod, Bamboo Pole, Fiberglass Rod, Iridium Rod
     public string Location { get; set; }         // Beach, River, Lake, Ocean, Mountain, Forest
     public string Weather { get; set; }          // Sunny, Rainy, Snowy, etc.
@@ -61,7 +60,6 @@ public class RLFishingData
         this.PlayerTileX = (int)Game1.player.Tile.X;
         this.PlayerTileY = (int)Game1.player.Tile.Y;
 
-        // AUGMENTED STATE: Capture contextual game variables
         this.TimeOfDay = Game1.timeOfDay;
         this.Weather = Game1.isRaining ? "Rainy" : (Game1.isSnowing ? "Snowy" : "Sunny");
         this.Season = Game1.season.ToString(); // Convert Season enum to string
@@ -76,7 +74,6 @@ public class RLFishingData
             this.IsNibbling = rod.isNibbling;
             this.BobberExists = this.IsFishing && rod.bobber != null;
             
-            // AUGMENTED STATE: Capture rod type
             this.RodType = GetRodTypeName(rod);
             
             // capture bobber position if it exists

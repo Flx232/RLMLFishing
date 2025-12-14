@@ -15,7 +15,7 @@ BASE_UP_FORCE = -0.25
 MAX_FORCE_RANGE = 0.15
 FORCE_SCALING_FACTOR_PER_10PX = 0.15
 
-# Error discretization bins
+# error discretization bins
 ERROR_BINS = [
     -50.0,
     -20.0,
@@ -27,7 +27,6 @@ HOST = '127.0.0.1'
 PORT = 8080
 BUFFER_SIZE = 4096
 
-# State augmentation flag - set to True to use 3D state (error+rod+difficulty), False for baseline 1D
 USE_AUGMENTED_STATE = True
 
 Q_TABLE = defaultdict(lambda: {0: 0.0, 1: 0.0})
@@ -35,7 +34,6 @@ LAST_STATE = None
 LAST_ACTION = 0
 
 def discretize_error(error):
-    """Discretize error into 5 bins"""
     if error < ERROR_BINS[0]:
         return 0
     elif error < ERROR_BINS[1]:
@@ -48,17 +46,15 @@ def discretize_error(error):
         return 4
 
 def discretize_rod_type(rod_type):
-    """Discretize rod type into ordinal bins"""
     rod_map = {
         "Training Rod": 0,
         "Bamboo Pole": 1,
         "Fiberglass Rod": 2,
         "Iridium Rod": 3
     }
-    return rod_map.get(rod_type, 2)  # Default to Fiberglass
+    return rod_map.get(rod_type, 2) 
 
 def discretize_difficulty(difficulty):
-    """Discretize difficulty into 3 bins: Easy, Medium, Hard"""
     if difficulty < 50:
         return 0  # Easy
     elif difficulty < 80:
@@ -67,12 +63,6 @@ def discretize_difficulty(difficulty):
         return 2  # Hard
 
 def get_state_key(error, state_raw=None, use_augmented=True):
-    """
-    Create state key for Q-table lookup
-    
-    Baseline (1D): Just error bin
-    Augmented (3D): error_bin_rod_bin_difficulty_bin
-    """
     error_bin = discretize_error(error)
     
     if not use_augmented or state_raw is None:
@@ -245,25 +235,11 @@ def run_rl_agent(host, port, use_augmented=True):
         if s:
             s.close()
 
-    print(f"\n--- Q-Learning Agent Disconnected ---", file=sys.stderr, flush=True)
+    print(f"\nQ-Learning Agent Disconnected", file=sys.stderr, flush=True)
     print(f"Mode: {mode_str}", file=sys.stderr, flush=True)
     print(f"Q-Table size: {len(Q_TABLE)} states", file=sys.stderr, flush=True)
     print(f"Epsilon finished at: {EPSILON:.4f}", file=sys.stderr, flush=True)
     print(f"Total episodes: {episode_counter}", file=sys.stderr, flush=True)
-    
-    print("\n--- Final Q-Table (Top 20 States) ---", file=sys.stderr, flush=True)
-    # Sort by max Q-value to show most important states
-    sorted_states = sorted(Q_TABLE.items(), 
-                          key=lambda x: max(x[1].values()), 
-                          reverse=True)[:20]
-    for state, q_values in sorted_states:
-        print(
-            f"State {state}: Q(0): {q_values.get(0, 0.0):.3f}, "
-            f"Q(1): {q_values.get(1, 0.0):.3f}",
-            file=sys.stderr,
-            flush=True
-        )
-    print("------------------------------------", file=sys.stderr, flush=True)
 
 if __name__ == '__main__':
     run_rl_agent(HOST, PORT, use_augmented=USE_AUGMENTED_STATE)

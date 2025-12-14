@@ -114,7 +114,6 @@ def get_reward(error):
     return reward
 
 def encode_rod_type(rod_type):
-    """Encode rod type as ordinal value normalized to [0,1]"""
     rod_encoding = {
         "Training Rod": 0,
         "Bamboo Pole": 1,
@@ -125,7 +124,6 @@ def encode_rod_type(rod_type):
     return rod_value / 3.0  # Normalize to [0,1]
 
 def encode_location(location_name):
-    """Encode location as one-hot vector [Beach, River, Lake, Ocean/Other]"""
     # Returns 4D vector
     location_map = {
         "Beach": [1, 0, 0, 0],
@@ -138,21 +136,13 @@ def encode_location(location_name):
     return location_map.get(location_name, [0, 0, 0, 1])  # Default to Ocean/Other
 
 def encode_weather(weather):
-    """Encode weather as binary (Rainy=1, Not Rainy=0)"""
     return 1.0 if weather and weather.lower() == 'rainy' else 0.0
 
 def encode_time_of_day(time):
-    """Normalize time of day to [0,1]"""
     # Time is typically 600-2600 (6am to 2am)
     return time / 2400.0 if time else 0.5
 
 def create_state_vector(state_raw, error, use_augmented=True):
-    """
-    Create state vector from raw state data
-    
-    Baseline (3D): [error, bobber_velocity, fish_velocity]
-    Augmented (7D): [error, bobber_velocity, fish_velocity, rod_type, difficulty, time, weather]
-    """
     try:
         base_state = [
             error,
@@ -298,7 +288,7 @@ def run_rl_agent(host, port, use_augmented=True):
         if s:
             s.close()
 
-    print(f"\n--- DQN Agent Disconnected ---", file=sys.stderr, flush=True)
+    print(f"\nDQN Agent Disconnected", file=sys.stderr, flush=True)
     print(f"Mode: {mode_str}", file=sys.stderr, flush=True)
     print(f"Memory size: {len(agent.memory)}", file=sys.stderr, flush=True)
     print(f"Epsilon finished at: {agent.epsilon:.4f}", file=sys.stderr, flush=True)

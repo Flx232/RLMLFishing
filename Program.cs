@@ -76,7 +76,6 @@ namespace RL_Fishing
             this.Monitor.Log("RL Fishing Mod Loaded! Listening for RL Agent on port 8080...", LogLevel.Info);
             this.Monitor.Log($"Auto Energy/Health Replenishment: {(enableAutoReplenish ? "ENABLED" : "DISABLED")}", LogLevel.Info);
             this.Monitor.Log("", LogLevel.Info);
-            this.Monitor.Log("=== EXPERIMENT HOTKEYS ===", LogLevel.Info);
             this.Monitor.Log("P - Print fishing data", LogLevel.Info);
             this.Monitor.Log("E - Toggle energy auto-replenish", LogLevel.Info);
             this.Monitor.Log("R - Manual energy replenish", LogLevel.Info);
@@ -85,7 +84,6 @@ namespace RL_Fishing
             this.Monitor.Log("N - Cycle season (Spring→Summer→Fall→Winter)", LogLevel.Info);
             this.Monitor.Log("M - Cycle weather (Sunny→Rainy→Stormy)", LogLevel.Info);
             this.Monitor.Log("T - Cycle time (6am→12pm→6pm)", LogLevel.Info);
-            this.Monitor.Log("==========================", LogLevel.Info);
         }
 
         // handles button presses for experiment control
@@ -94,14 +92,12 @@ namespace RL_Fishing
             if (!Context.IsWorldReady)
                 return;
 
-            // === EXISTING HOTKEYS ===
-            // P key: Print fishing data
+
             if (e.Button == SButton.P)
             {
                 this.PrintFishingData();
             }
             
-            // E key: Toggle auto-replenishment
             if (e.Button == SButton.E)
             {
                 this.enableAutoReplenish = !this.enableAutoReplenish;
@@ -109,39 +105,32 @@ namespace RL_Fishing
             }
             
             // R key: Manual replenish now
-            if (e.Button == SButton.R)
             {
                 this.ReplenishPlayerStats(force: true);
                 this.Monitor.Log("Manual energy/health replenishment triggered!", LogLevel.Info);
             }
             
-            // === NEW EXPERIMENT CONTROL HOTKEYS ===
-            
-            // L key: Cycle fishing location
+
             if (e.Button == SButton.L)
             {
                 this.CycleLocation();
             }
             
-            // K key: Cycle rod type
             if (e.Button == SButton.K)
             {
                 this.CycleRodType();
             }
             
-            // N key: Cycle season (N for seasoN)
             if (e.Button == SButton.N)
             {
                 this.CycleSeason();
             }
             
-            // M key: Cycle weather (M for cliMate)
             if (e.Button == SButton.M)
             {
                 this.CycleWeather();
             }
             
-            // T key: Cycle time (morning/noon/evening)
             if (e.Button == SButton.T)
             {
                 this.CycleTime();
@@ -156,16 +145,14 @@ namespace RL_Fishing
 
             this.Monitor.Log("Save loaded - adding fishing rods to inventory...", LogLevel.Info);
             
-            // Add all 4 fishing rod types to player inventory
             this.AddFishingRodToInventory(0); // Training Rod
             this.AddFishingRodToInventory(1); // Bamboo Pole
             this.AddFishingRodToInventory(2); // Fiberglass Rod
             this.AddFishingRodToInventory(3); // Iridium Rod
             
-            this.Monitor.Log("✓ All fishing rods added to inventory!", LogLevel.Info);
+            this.Monitor.Log("All fishing rods added to inventory!", LogLevel.Info);
         }
 
-        // Helper method to add a fishing rod to player inventory
         private void AddFishingRodToInventory(int upgradeLevel)
         {
             // Create fishing rod with specified upgrade level
@@ -208,7 +195,7 @@ namespace RL_Fishing
                     break;
             }
             
-            this.Monitor.Log($"✓ Teleported to: {targetLocation}", LogLevel.Info);
+            this.Monitor.Log($"Teleported to: {targetLocation}", LogLevel.Info);
         }
         
         private void CycleRodType()
@@ -233,7 +220,7 @@ namespace RL_Fishing
             {
                 // Equip the found rod
                 Game1.player.CurrentToolIndex = targetIndex;
-                this.Monitor.Log($"✓ Equipped: {GetRodName(currentRodLevel)}", LogLevel.Info);
+                this.Monitor.Log($"Equipped: {GetRodName(currentRodLevel)}", LogLevel.Info);
             }
             else
             {
@@ -247,7 +234,7 @@ namespace RL_Fishing
                     if (Game1.player.Items[i] is FishingRod fishingRod && fishingRod.UpgradeLevel == currentRodLevel)
                     {
                         Game1.player.CurrentToolIndex = i;
-                        this.Monitor.Log($"✓ Added and equipped: {GetRodName(currentRodLevel)}", LogLevel.Info);
+                        this.Monitor.Log($"Added and equipped: {GetRodName(currentRodLevel)}", LogLevel.Info);
                         break;
                     }
                 }
@@ -333,7 +320,7 @@ namespace RL_Fishing
                     break;
             }
             
-            this.Monitor.Log($"✓ Weather: {weatherName}", LogLevel.Info);
+            this.Monitor.Log($"Weather: {weatherName}", LogLevel.Info);
         }
         
         private void CycleTime()
@@ -394,7 +381,7 @@ namespace RL_Fishing
             }
             
             Game1.season = season;
-            this.Monitor.Log($"✓ Season set to: {seasonName.ToUpper()}", LogLevel.Info);
+            this.Monitor.Log($"Season set to: {seasonName.ToUpper()}", LogLevel.Info);
         }
         
         private void SetWeather(string weather)
@@ -406,27 +393,27 @@ namespace RL_Fishing
                     Game1.isSnowing = false;
                     Game1.isLightning = false;
                     currentWeatherIndex = 0;
-                    this.Monitor.Log("✓ Weather set to: SUNNY", LogLevel.Info);
+                    this.Monitor.Log("Weather set to: SUNNY", LogLevel.Info);
                     break;
                 case "rainy":
                     Game1.isRaining = true;
                     Game1.isSnowing = false;
                     Game1.isLightning = false;
                     currentWeatherIndex = 1;
-                    this.Monitor.Log("✓ Weather set to: RAINY", LogLevel.Info);
+                    this.Monitor.Log("Weather set to: RAINY", LogLevel.Info);
                     break;
                 case "stormy":
                     Game1.isRaining = true;
                     Game1.isLightning = true;
                     Game1.isSnowing = false;
                     currentWeatherIndex = 2;
-                    this.Monitor.Log("✓ Weather set to: STORMY", LogLevel.Info);
+                    this.Monitor.Log("Weather set to: STORMY", LogLevel.Info);
                     break;
                 case "snowy":
                     Game1.isSnowing = true;
                     Game1.isRaining = false;
                     Game1.isLightning = false;
-                    this.Monitor.Log("✓ Weather set to: SNOWY", LogLevel.Info);
+                    this.Monitor.Log("Weather set to: SNOWY", LogLevel.Info);
                     break;
             }
         }
@@ -450,7 +437,6 @@ namespace RL_Fishing
         // debug function that lists all private fields in bobberbar
         private void ListBobberBarFields(BobberBar bobberBar)
         {
-            this.Monitor.Log("--- DEBUG: BOBBER BAR PRIVATE FIELDS ---", LogLevel.Info);
             try
             {
                 var fields = bobberBar.GetType().GetFields(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -463,7 +449,6 @@ namespace RL_Fishing
             {
                 this.Monitor.Log($"Failed to list fields: {ex.Message}", LogLevel.Error);
             }
-            this.Monitor.Log("-----------------------------------------", LogLevel.Info);
         }
         
         // tracks minigame start and end
@@ -538,6 +523,7 @@ namespace RL_Fishing
 
             // update the environment state every tick
             this.currentFishingData.Update(); 
+            
             // safely grab the latest action instruction from agent
             int action;
             float forceInjection;
@@ -612,7 +598,7 @@ namespace RL_Fishing
                         buttonPressedField?.SetValue(false); 
                         this.Monitor.Log("RL Action: Continuous Hold Flag Set (FALSE)", LogLevel.Trace);
                     }
-                    catch (Exception) 
+                    catch
                     {
                         // ignored
                     } 
