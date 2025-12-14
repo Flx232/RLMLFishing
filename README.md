@@ -1,15 +1,160 @@
-# RLMLFishing - How to Run RLMLFishing in Stardew Valley
-## Requirements
-A valid copy of Stardew Valley (We do not encourage piracy, please support ConcernedApe)
-An external modding client called SMAPI
-The ability to run python on your console.
+# Stardew Valley RL Fishing Agent
 
-## Instructions
-Step 1. Buy Stardew Valley. Recommended to buy on steam for easy connection to SMAPI down the line.
-Step 2. Go to https://stardewvalleywiki.com/Modding:Player_Guide/Getting_Started. Under Getting started tab, click the OS you are using right now to learn how to install SMAPI.
-Step 3. Once SMAPI is configured, Unzip the RLMLFishing and move the contents to the Mods folder in your Stardew Valley folder. SMAPI will automatically link the mod to Stardew Valley.
-Step 4. Open up Stardew Running SMAPI. If you are running windows, the shortcut is in the same Stardew Valley folder as the mods folder. Though you can also configure Steam to always star up the modded version.
-Step 4.1 If you are starting a new game, it is recommended after you get the fishing rod to fish and catch it yourself once. This will finish the fishing tutorial and allow the Q_learning model to start learning real scenarios.
-Step 5. Finally, open up the terminal, go to the directory containing q_learning.py and run the script.
-Step 5.1 Or you can run the DQN.py file, which should be located in the same directory.
-Step 6. Find the nearest body of water with a fishing pole and start running the experiment
+Reinforcement Learning agents (Q-Learning and Deep Q-Networks) for mastering the Stardew Valley fishing minigame. This project uses a custom C# mod to interface with the game and Python-based RL agents for real-time control.
+
+## Prerequisites
+
+### Game Requirements
+- **Stardew Valley Version:** `1.6.15` (exact version required)(We do not encourage piracy, please support ConcernedApe)
+- **SMAPI Version:** `4.3.2` (Stardew Modding API)
+
+### Installation Steps
+
+#### 1. Install SMAPI (Stardew Modding API)
+
+SMAPI is required to load the RL Fishing mod into Stardew Valley.
+
+**Installation Guide:** https://stardewvalleywiki.com/Modding:Player_Guide/Getting_Started
+
+**Quick Installation:**
+1. Download SMAPI 4.3.2 from https://smapi.io/
+2. Extract the downloaded file
+3. Run the installer for your operating system:
+   - Windows: `install on Windows.bat`
+   - macOS: `install on Mac.command`
+   - Linux: `install on Linux.sh`
+4. Follow the on-screen instructions
+5. Verify installation by launching the game through SMAPI (not Steam directly)
+
+#### 2. Install the RL Fishing Mod
+
+1. Locate your Stardew Valley `Mods` folder:
+   - Windows: `%appdata%\StardewValley\Mods`
+   - macOS: `~/.config/StardewValley/Mods`
+   - Linux: `~/.config/StardewValley/Mods`
+   
+2. Extract `rl_fishing.zip` into the `Mods` folder
+   - You should have: `Mods/RLFishing/` containing the mod files
+
+3. Launch Stardew Valley through SMAPI to verify the mod loads correctly
+
+#### 3. Install Python Dependencies
+
+```bash
+# Python 3.8+ required
+pip install numpy
+```
+
+No additional dependencies needed - the agents use only standard library and NumPy!
+
+## Running the RL Agents
+
+### Step-by-Step Instructions
+
+**Important:** The agents run in real-time alongside the game. Follow these steps in order:
+
+#### 1. Launch Stardew Valley with SMAPI
+```bash
+# Launch through SMAPI (not Steam directly)
+# The game will start with mods loaded
+```
+
+#### 2. Load Your Save and Start Fishing
+- Load your save file
+- Equip a fishing rod (Bamboo, Fiberglass, or Iridium)
+- Go to a fishing location (e.g., Pelican Town river)
+- Cast your line (the mod will take over once a fish bites)
+
+#### 3. Run the RL Agent (in a separate terminal)
+
+**Option A: Q-Learning Agent**
+```bash
+# Run with output to console
+python q_learning.py
+
+# RECOMMENDED: Write output to file for analysis
+python q_learning.py 2> q_learning_output.txt
+```
+
+**Option B: Deep Q-Network (DQN) Agent**
+```bash
+# Run with output to console
+python DQN.py
+
+# RECOMMENDED: Write output to file for analysis
+python DQN.py 2> dqn_output.txt
+```
+
+## Understanding the Output
+
+### Data Format
+
+Both agents output structured training data in the following format:
+
+```
+[HEADER]MODE,TICK,EPISODE,BAR_POS,FISH_POS,REWARD,FORCE,Q_HOLD,EPSILON,TD_ERROR
+[DATA]AUGMENTED-3D,1,0,320.5,315.2,0.8234,-0.25,0.4532,0.49997500,0.1234
+[DATA]AUGMENTED-3D,2,0,318.3,312.8,0.8567,0.00,0.4589,0.49995000,0.0876
+...
+```
+
+**Columns:**
+- `MODE`: State representation used (AUGMENTED-3D or AUGMENTED-7D)
+- `TICK`: Timestep within current episode
+- `EPISODE`: Episode number (fish catch attempt)
+- `BAR_POS`: Bobber bar center position
+- `FISH_POS`: Fish position
+- `REWARD`: Reward received this timestep
+- `FORCE`: Control force applied
+- `Q_HOLD`: Q-value for holding action
+- `EPSILON`: Current exploration rate
+- `TD_ERROR`: Temporal difference error
+
+### Agent Hyperparameters
+
+Both agents can be configured by editing the Python files:
+
+**Q-Learning (`q_learning.py`):**
+```python
+ALPHA = 0.001          # Learning rate
+GAMMA = 0.95           # Discount factor
+EPSILON = 0.5          # Initial exploration rate
+EPSILON_DECAY = 0.99995  # Exploration decay
+```
+
+**DQN (`DQN.py`):**
+```python
+ALPHA = 0.001          # Learning rate
+GAMMA = 0.95           # Discount factor
+EPSILON = 0.5          # Initial exploration rate
+EPSILON_DECAY = 0.99995  # Exploration decay
+BATCH_SIZE = 32        # Training batch size
+MEMORY_SIZE = 5000     # Replay buffer capacity
+SYNC_RATE = 2000       # Target network update frequency
+```
+
+### State Augmentation
+
+Both agents support state augmentation flags:
+
+**Q-Learning:**
+```python
+USE_AUGMENTED_STATE = True  # 3D state (error + rod + difficulty)
+                            # False: 1D state (error only)
+```
+
+**DQN:**
+```python
+USE_AUGMENTED_STATE = True  # 7D state (error + velocities + context)
+                            # False: 3D state (error + velocities)
+```
+
+## References
+
+- **FishBot mod** inspired by: https://git.ulra.eu/adro/sdv-fishbot
+
+## Contact
+
+For questions or issues:
+- Akash Basu: ab3334@columbia.edu
+- Frank Xu: fx65@columbia.edu
