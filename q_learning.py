@@ -15,6 +15,7 @@ BASE_UP_FORCE = -0.25
 MAX_FORCE_RANGE = 0.15
 FORCE_SCALING_FACTOR_PER_10PX = 0.15
 
+# Error discretization bins
 ERROR_BINS = [
     -50.0,
     -20.0,
@@ -26,23 +27,65 @@ HOST = '127.0.0.1'
 PORT = 8080
 BUFFER_SIZE = 4096
 
+# State augmentation flag - set to True to use 3D state (error+rod+difficulty), False for baseline 1D
+USE_AUGMENTED_STATE = True
+
 Q_TABLE = defaultdict(lambda: {0: 0.0, 1: 0.0})
 LAST_STATE = None
 LAST_ACTION = 0
 
-def get_state_key(error):
-    error_state = 0
+def discretize_error(error):
+    """Discretize error into 5 bins"""
     if error < ERROR_BINS[0]:
-        error_state = 0
+        return 0
     elif error < ERROR_BINS[1]:
-        error_state = 1
+        return 1
     elif error < ERROR_BINS[2]:
-        error_state = 2
+        return 2
     elif error < ERROR_BINS[3]:
-        error_state = 3
+        return 3
     else:
-        error_state = 4
-    return f"{error_state}"
+        return 4
+
+def discretize_rod_type(rod_type):
+    """Discretize rod type into ordinal bins"""
+    rod_map = {
+        "Training Rod": 0,
+        "Bamboo Pole": 1,
+        "Fiberglass Rod": 2,
+        "Iridium Rod": 3
+    }
+    return rod_map.get(rod_type, 2)  # Default to Fiberglass
+
+def discretize_difficulty(difficulty):
+    """Discretize difficulty into 3 bins: Easy, Medium, Hard"""
+    if difficulty < 50:
+        return 0  # Easy
+    elif difficulty < 80:
+        return 1  # Medium
+    else:
+        return 2  # Hard
+
+def get_state_key(error, state_raw=None, use_augmented=True):
+    """
+    Create state key for Q-table lookup
+    
+    Baseline (1D): Just error bin
+    Augmented (3D): error_bin_rod_bin_difficulty_bin
+    """
+    error_bin = discretize_error(error)
+    
+    if not use_augmented or state_raw is None:
+        return f"{error_bin}"
+    
+    # Add contextual variables for augmented state
+    rod_type = state_raw.get('RodType', 'Fiberglass Rod')
+    difficulty = state_raw.get('Difficulty', 50)
+    
+    rod_bin = discretize_rod_type(rod_type)
+    diff_bin = discretize_difficulty(difficulty)
+    
+    return f"{error_bin}_{rod_bin}_{diff_bin}"
 
 def get_reward(error):
     abs_error = abs(error)
@@ -73,14 +116,16 @@ def update_q_table(old_state, action, reward, new_state, is_terminal=False):
     Q_TABLE[old_state][action] = new_q
     return td_error
 
-def run_rl_agent(host, port):
+def run_rl_agent(host, port, use_augmented=True):
     global LAST_STATE, LAST_ACTION, EPSILON
     s = None
     episode_tick_counter = 0
     episode_counter = 0
     last_td_error = 0.0
 
-    print(f"[HEADER]TICK,EPISODE,BAR_POS,FISH_POS,REWARD,FORCE,Q_HOLD,EPSILON,TD_ERROR", file=sys.stderr, flush=True)
+    mode_str = "AUGMENTED-3D" if use_augmented else "BASELINE-1D"
+    print(f"[HEADER]MODE,TICK,EPISODE,BAR_POS,FISH_POS,REWARD,FORCE,Q_HOLD,EPSILON,TD_ERROR", file=sys.stderr, flush=True)
+    print(f"Running Q-Learning Agent in {mode_str} mode", file=sys.stderr, flush=True)
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -108,7 +153,7 @@ def run_rl_agent(host, port):
 
                     if is_nibbling and not state_raw.get('MinigameActive', False):
                         action_out = 1
-                        print("\nController: HOOK!", file=sys.stderr, flush=True)
+                        print(f"\nController: HOOK! Episode {episode_counter}", file=sys.stderr, flush=True)
                         LAST_STATE = None
 
                     elif state_raw.get('MinigameActive', False):
@@ -122,7 +167,7 @@ def run_rl_agent(host, port):
                         error = fish_pos - bar_center
                         abs_error = abs(error)
 
-                        current_state = get_state_key(error)
+                        current_state = get_state_key(error, state_raw, use_augmented)
                         reward = get_reward(error)
 
                         if LAST_STATE is not None:
@@ -149,7 +194,7 @@ def run_rl_agent(host, port):
                         LAST_ACTION = action_out
 
                         print(
-                            f"[DATA]{episode_tick_counter},{episode_counter},"
+                            f"[DATA]{mode_str},{episode_tick_counter},{episode_counter},"
                             f"{bar_center:.4f},{fish_pos:.4f},{reward:.4f},"
                             f"{force_boost:.4f},{q_value_hold:.4f},"
                             f"{EPSILON:.8f},{last_td_error:.4f}",
@@ -200,15 +245,25 @@ def run_rl_agent(host, port):
         if s:
             s.close()
 
-    print("\n--- Final Q-Table (Partial View) ---", file=sys.stderr, flush=True)
-    for state, q_values in list(dict(Q_TABLE).items())[:10]:
+    print(f"\n--- Q-Learning Agent Disconnected ---", file=sys.stderr, flush=True)
+    print(f"Mode: {mode_str}", file=sys.stderr, flush=True)
+    print(f"Q-Table size: {len(Q_TABLE)} states", file=sys.stderr, flush=True)
+    print(f"Epsilon finished at: {EPSILON:.4f}", file=sys.stderr, flush=True)
+    print(f"Total episodes: {episode_counter}", file=sys.stderr, flush=True)
+    
+    print("\n--- Final Q-Table (Top 20 States) ---", file=sys.stderr, flush=True)
+    # Sort by max Q-value to show most important states
+    sorted_states = sorted(Q_TABLE.items(), 
+                          key=lambda x: max(x[1].values()), 
+                          reverse=True)[:20]
+    for state, q_values in sorted_states:
         print(
-            f"State {state}: Q(0): {q_values.get(0, 0.0):.2f}, "
-            f"Q(1): {q_values.get(1, 0.0):.2f}",
+            f"State {state}: Q(0): {q_values.get(0, 0.0):.3f}, "
+            f"Q(1): {q_values.get(1, 0.0):.3f}",
             file=sys.stderr,
             flush=True
         )
     print("------------------------------------", file=sys.stderr, flush=True)
 
 if __name__ == '__main__':
-    run_rl_agent(HOST, PORT)
+    run_rl_agent(HOST, PORT, use_augmented=USE_AUGMENTED_STATE)

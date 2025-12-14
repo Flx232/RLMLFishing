@@ -2,6 +2,7 @@
 // extracts fishing rod state, player position, and minigame data from stardew valley
 // uses reflection to access private bobberbar fields for detailed state information
 // serializes all state data to json format for transmission to python rl agents
+// AUGMENTED VERSION: includes contextual variables (rod type, location, weather, time of day)
 
 using StardewModdingAPI;
 using StardewValley;
@@ -40,6 +41,13 @@ public class RLFishingData
     public float FishVelocity { get; set; }
     public float DistanceFromCatching { get; set; } // distance to fill the catch meter (0.0 to 1.0)
 
+    // AUGMENTED STATE: Contextual variables for state augmentation experiments
+    public string RodType { get; set; }          // Training Rod, Bamboo Pole, Fiberglass Rod, Iridium Rod
+    public string Location { get; set; }         // Beach, River, Lake, Ocean, Mountain, Forest
+    public string Weather { get; set; }          // Sunny, Rainy, Snowy, etc.
+    public string Season { get; set; }           // Spring, Summer, Fall, Winter
+    public int TimeOfDay { get; set; }           // Game time (600-2600)
+
     // constructor that stores reference to smapi helper for reflection
     public RLFishingData(IModHelper helper)
     {
@@ -53,6 +61,12 @@ public class RLFishingData
         this.PlayerTileX = (int)Game1.player.Tile.X;
         this.PlayerTileY = (int)Game1.player.Tile.Y;
 
+        // AUGMENTED STATE: Capture contextual game variables
+        this.TimeOfDay = Game1.timeOfDay;
+        this.Weather = Game1.isRaining ? "Rainy" : (Game1.isSnowing ? "Snowy" : "Sunny");
+        this.Season = Game1.season.ToString(); // Convert Season enum to string
+        this.Location = GetLocationName();
+
         // capture fishing rod state if equipped
         if (Game1.player.CurrentTool is FishingRod rod)
         {
@@ -61,6 +75,9 @@ public class RLFishingData
             this.IsFishing = rod.isFishing;
             this.IsNibbling = rod.isNibbling;
             this.BobberExists = this.IsFishing && rod.bobber != null;
+            
+            // AUGMENTED STATE: Capture rod type
+            this.RodType = GetRodTypeName(rod);
             
             // capture bobber position if it exists
             if (this.BobberExists)
@@ -73,6 +90,7 @@ public class RLFishingData
         {
             this.HasFishingRod = false;
             this.BobberExists = false;
+            this.RodType = "None";
         }
 
         // capture minigame state using reflection to access private fields
@@ -112,6 +130,50 @@ public class RLFishingData
         }
     }
 
+    // AUGMENTED STATE HELPER: Get readable rod type name
+    private string GetRodTypeName(FishingRod rod)
+    {
+        // Rod upgrade level: 0 = Training Rod, 1 = Bamboo Pole, 2 = Fiberglass Rod, 3 = Iridium Rod
+        int upgradeLevel = rod.UpgradeLevel;
+        
+        switch (upgradeLevel)
+        {
+            case 0:
+                return "Training Rod";
+            case 1:
+                return "Bamboo Pole";
+            case 2:
+                return "Fiberglass Rod";
+            case 3:
+                return "Iridium Rod";
+            default:
+                return "Unknown Rod";
+        }
+    }
+
+    // AUGMENTED STATE HELPER: Get location name for categorization
+    private string GetLocationName()
+    {
+        if (Game1.currentLocation == null)
+            return "Unknown";
+        
+        string locationName = Game1.currentLocation.Name;
+        
+        // Map location names to categories
+        if (locationName.Contains("Beach"))
+            return "Beach";
+        else if (locationName.Contains("Mountain") || locationName.Contains("UndergroundMine"))
+            return "Mountain";
+        else if (locationName.Contains("Forest") || locationName.Contains("Woods"))
+            return "Forest";
+        else if (locationName.Contains("Town") || locationName.Contains("River"))
+            return "River";
+        else if (locationName == "Ocean" || locationName.Contains("Submarine"))
+            return "Ocean";
+        else
+            return "Lake";  // Default category for ponds, lakes, etc.
+    }
+
     // serializes all fishing state data to json format for transmission
     public string ToJson()
     {
@@ -142,9 +204,16 @@ public class RLFishingData
         // velocity data
         sb.AppendLine($"\"BobberBarVelocity\": {this.BobberBarVelocity},");
         sb.AppendLine($"\"FishVelocity\": {this.FishVelocity},");
+        sb.AppendLine($"\"Difficulty\": {this.Difficulty},");
+        
+        // AUGMENTED STATE: Contextual variables
+        sb.AppendLine($"\"RodType\": \"{this.RodType}\",");
+        sb.AppendLine($"\"Location\": \"{this.Location}\",");
+        sb.AppendLine($"\"Weather\": \"{this.Weather}\",");
+        sb.AppendLine($"\"Season\": \"{this.Season}\",");
         
         // last property without trailing comma
-        sb.Append($"\"Difficulty\": {this.Difficulty}"); 
+        sb.Append($"\"TimeOfDay\": {this.TimeOfDay}"); 
         
         sb.AppendLine("}");
 
