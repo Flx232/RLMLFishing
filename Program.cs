@@ -612,13 +612,8 @@ namespace RL_Fishing
                         buttonPressedField?.SetValue(false); 
                         this.Monitor.Log("RL Action: Continuous Hold Flag Set (FALSE)", LogLevel.Trace);
                     }
-<<<<<<< HEAD
-                    catch
-                    {
-=======
                     catch (Exception) 
-                    { 
->>>>>>> main
+                    {
                         // ignored
                     } 
                     
