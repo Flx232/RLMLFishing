@@ -1,5 +1,7 @@
 # Stardew Valley RL Fishing Agent
 
+**Disclaimer:** In the making of our writeup, we used gemini to cut down portions from the conclusion and analysis section to fit the 5-page limit. Aside from that, majority of the writeup and our code is our own. 
+
 Reinforcement Learning agents (Q-Learning and Deep Q-Networks) for mastering the Stardew Valley fishing minigame. This project uses a custom C# mod to interface with the game and Python-based RL agents for real-time control.
 
 ## Prerequisites
