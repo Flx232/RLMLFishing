@@ -22,6 +22,9 @@ HOST = '127.0.0.1'
 PORT = 8080
 BUFFER_SIZE = 4096
 
+# State augmentation flag - set to True to use 7D state, False for baseline 3D state
+USE_AUGMENTED_STATE = True
+
 class DQNAgent:
     def __init__(self, state_size, action_size):
         self.state_size = state_size
@@ -37,9 +40,11 @@ class DQNAgent:
 
     def _build_network(self):
         weights = {}
-        weights['w1'] = [[random.uniform(-0.1, 0.1) for _ in range(self.state_size)] for _ in range(8)]
-        weights['b1'] = [0.0] * 8
-        weights['w2'] = [[random.uniform(-0.1, 0.1) for _ in range(8)] for _ in range(self.action_size)]
+        # Increase hidden layer size for 7D input (16 neurons instead of 8)
+        hidden_size = 16 if self.state_size > 3 else 8
+        weights['w1'] = [[random.uniform(-0.1, 0.1) for _ in range(self.state_size)] for _ in range(hidden_size)]
+        weights['b1'] = [0.0] * hidden_size
+        weights['w2'] = [[random.uniform(-0.1, 0.1) for _ in range(hidden_size)] for _ in range(self.action_size)]
         weights['b2'] = [0.0] * self.action_size
         return weights
 
@@ -108,26 +113,91 @@ def get_reward(error):
         reward -= 0.3
     return reward
 
-def create_state_vector(state_raw, error):
-    try:
-        return [
-            error,
-            state_raw['BobberBarVelocity'],
-            state_raw['FishVelocity']
-        ]
-    except KeyError:
-        return [error, 0.0, 0.0]
+def encode_rod_type(rod_type):
+    """Encode rod type as ordinal value normalized to [0,1]"""
+    rod_encoding = {
+        "Training Rod": 0,
+        "Bamboo Pole": 1,
+        "Fiberglass Rod": 2,
+        "Iridium Rod": 3
+    }
+    rod_value = rod_encoding.get(rod_type, 2)  # Default to Fiberglass
+    return rod_value / 3.0  # Normalize to [0,1]
 
-def run_rl_agent(host, port):
+def encode_location(location_name):
+    """Encode location as one-hot vector [Beach, River, Lake, Ocean/Other]"""
+    # Returns 4D vector
+    location_map = {
+        "Beach": [1, 0, 0, 0],
+        "River": [0, 1, 0, 0],
+        "Lake": [0, 0, 1, 0],
+        "Ocean": [0, 0, 0, 1],
+        "Mountain": [0, 1, 0, 0],  # Mountain lake/river
+        "Forest": [0, 0, 1, 0],    # Forest lake
+    }
+    return location_map.get(location_name, [0, 0, 0, 1])  # Default to Ocean/Other
+
+def encode_weather(weather):
+    """Encode weather as binary (Rainy=1, Not Rainy=0)"""
+    return 1.0 if weather and weather.lower() == 'rainy' else 0.0
+
+def encode_time_of_day(time):
+    """Normalize time of day to [0,1]"""
+    # Time is typically 600-2600 (6am to 2am)
+    return time / 2400.0 if time else 0.5
+
+def create_state_vector(state_raw, error, use_augmented=True):
+    """
+    Create state vector from raw state data
+    
+    Baseline (3D): [error, bobber_velocity, fish_velocity]
+    Augmented (7D): [error, bobber_velocity, fish_velocity, rod_type, difficulty, time, weather]
+    """
+    try:
+        base_state = [
+            error,
+            state_raw.get('BobberBarVelocity', 0.0),
+            state_raw.get('FishVelocity', 0.0)
+        ]
+        
+        if not use_augmented:
+            return base_state
+        
+        # Add contextual variables for augmented state
+        rod_type = state_raw.get('RodType', 'Fiberglass Rod')
+        difficulty = state_raw.get('Difficulty', 50)
+        time_of_day = state_raw.get('TimeOfDay', 1200)
+        weather = state_raw.get('Weather', 'Sunny')
+        
+        augmented_state = base_state + [
+            encode_rod_type(rod_type),
+            difficulty / 100.0,  # Normalize to [0,1]
+            encode_time_of_day(time_of_day),
+            encode_weather(weather)
+        ]
+        
+        return augmented_state
+        
+    except KeyError as e:
+        print(f"Warning: Missing key {e}, using defaults", file=sys.stderr, flush=True)
+        if use_augmented:
+            return [error, 0.0, 0.0, 0.5, 0.5, 0.5, 0.0]
+        else:
+            return [error, 0.0, 0.0]
+
+def run_rl_agent(host, port, use_augmented=True):
     s = None
-    agent = DQNAgent(state_size=3, action_size=2)
+    state_size = 7 if use_augmented else 3
+    agent = DQNAgent(state_size=state_size, action_size=2)
     LAST_STATE_VECTOR = None
     LAST_ACTION = 0
     last_td_error = 0.0
     episode_tick_counter = 0
     episode_counter = 0
 
-    print(f"[HEADER]TICK,EPISODE,BAR_POS,FISH_POS,REWARD,FORCE,Q_HOLD,EPSILON,TD_ERROR", file=sys.stderr, flush=True)
+    mode_str = "AUGMENTED-7D" if use_augmented else "BASELINE-3D"
+    print(f"[HEADER]MODE,TICK,EPISODE,BAR_POS,FISH_POS,REWARD,FORCE,Q_HOLD,EPSILON,TD_ERROR", file=sys.stderr, flush=True)
+    print(f"Running DQN Agent in {mode_str} mode", file=sys.stderr, flush=True)
 
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -157,7 +227,7 @@ def run_rl_agent(host, port):
 
                     if is_nibbling and not state_raw.get('MinigameActive', False):
                         action_out = 1
-                        print("\nController: HOOK!", file=sys.stderr, flush=True)
+                        print(f"\nController: HOOK! Episode {episode_counter}", file=sys.stderr, flush=True)
                         LAST_STATE_VECTOR = None
                         episode_tick_counter = 0
 
@@ -168,7 +238,7 @@ def run_rl_agent(host, port):
                         error = state_raw['FishPosition'] - bar_center
                         abs_error = abs(error)
 
-                        current_state_vector = create_state_vector(state_raw, error)
+                        current_state_vector = create_state_vector(state_raw, error, use_augmented)
                         reward = get_reward(error)
 
                         if LAST_STATE_VECTOR is not None:
@@ -199,7 +269,7 @@ def run_rl_agent(host, port):
 
                         fish_pos = state_raw['FishPosition']
                         print(
-                            f"[DATA]{episode_tick_counter},{episode_counter},"
+                            f"[DATA]{mode_str},{episode_tick_counter},{episode_counter},"
                             f"{bar_center:.4f},{fish_pos:.4f},{reward:.4f},"
                             f"{force_boost:.4f},{q_value_hold:.4f},"
                             f"{agent.epsilon:.8f},{last_td_error:.4f}",
@@ -210,7 +280,8 @@ def run_rl_agent(host, port):
                     else:
                         if LAST_STATE_VECTOR is not None:
                             episode_counter += 1
-                            agent.remember(LAST_STATE_VECTOR, LAST_ACTION, 0.0, [0.0, 0.0, 0.0], True)
+                            agent.remember(LAST_STATE_VECTOR, LAST_ACTION, 0.0, 
+                                         [0.0] * state_size, True)
                             LAST_STATE_VECTOR = None
 
                     action_payload = json.dumps({"action": action_out, "interval": force_boost}) + "\n"
@@ -228,8 +299,10 @@ def run_rl_agent(host, port):
             s.close()
 
     print(f"\n--- DQN Agent Disconnected ---", file=sys.stderr, flush=True)
+    print(f"Mode: {mode_str}", file=sys.stderr, flush=True)
     print(f"Memory size: {len(agent.memory)}", file=sys.stderr, flush=True)
     print(f"Epsilon finished at: {agent.epsilon:.4f}", file=sys.stderr, flush=True)
+    print(f"Total episodes: {episode_counter}", file=sys.stderr, flush=True)
 
 if __name__ == '__main__':
-    run_rl_agent(HOST, PORT)
+    run_rl_agent(HOST, PORT, use_augmented=USE_AUGMENTED_STATE)
