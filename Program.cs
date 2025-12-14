@@ -538,7 +538,6 @@ namespace RL_Fishing
 
             // update the environment state every tick
             this.currentFishingData.Update(); 
-            
             // safely grab the latest action instruction from agent
             int action;
             float forceInjection;
@@ -613,8 +612,13 @@ namespace RL_Fishing
                         buttonPressedField?.SetValue(false); 
                         this.Monitor.Log("RL Action: Continuous Hold Flag Set (FALSE)", LogLevel.Trace);
                     }
+<<<<<<< HEAD
                     catch
                     {
+=======
+                    catch (Exception) 
+                    { 
+>>>>>>> main
                         // ignored
                     } 
                     
