@@ -1,5 +1,6 @@
 # RLMLFishing - How to Run RLMLFishing in Stardew Valley
 ## Requirements
+UPDATE: USE 'akash-model(s)-and-output' branch instead!!!!!
 A valid copy of Stardew Valley (We do not encourage piracy, please support ConcernedApe)
 An external modding client called SMAPI
 The ability to run python on your console.
