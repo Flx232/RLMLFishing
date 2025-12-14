@@ -94,12 +94,14 @@ namespace RL_Fishing
             if (!Context.IsWorldReady)
                 return;
 
-
+            // === EXISTING HOTKEYS ===
+            // P key: Print fishing data
             if (e.Button == SButton.P)
             {
                 this.PrintFishingData();
             }
             
+            // E key: Toggle auto-replenishment
             if (e.Button == SButton.E)
             {
                 this.enableAutoReplenish = !this.enableAutoReplenish;
@@ -107,32 +109,39 @@ namespace RL_Fishing
             }
             
             // R key: Manual replenish now
+            if (e.Button == SButton.R)
             {
                 this.ReplenishPlayerStats(force: true);
                 this.Monitor.Log("Manual energy/health replenishment triggered!", LogLevel.Info);
             }
             
-
+            // === NEW EXPERIMENT CONTROL HOTKEYS ===
+            
+            // L key: Cycle fishing location
             if (e.Button == SButton.L)
             {
                 this.CycleLocation();
             }
             
+            // K key: Cycle rod type
             if (e.Button == SButton.K)
             {
                 this.CycleRodType();
             }
             
+            // N key: Cycle season (N for seasoN)
             if (e.Button == SButton.N)
             {
                 this.CycleSeason();
             }
             
+            // M key: Cycle weather (M for cliMate)
             if (e.Button == SButton.M)
             {
                 this.CycleWeather();
             }
             
+            // T key: Cycle time (morning/noon/evening)
             if (e.Button == SButton.T)
             {
                 this.CycleTime();
@@ -147,6 +156,7 @@ namespace RL_Fishing
 
             this.Monitor.Log("Save loaded - adding fishing rods to inventory...", LogLevel.Info);
             
+            // Add all 4 fishing rod types to player inventory
             this.AddFishingRodToInventory(0); // Training Rod
             this.AddFishingRodToInventory(1); // Bamboo Pole
             this.AddFishingRodToInventory(2); // Fiberglass Rod
@@ -155,6 +165,7 @@ namespace RL_Fishing
             this.Monitor.Log("✓ All fishing rods added to inventory!", LogLevel.Info);
         }
 
+        // Helper method to add a fishing rod to player inventory
         private void AddFishingRodToInventory(int upgradeLevel)
         {
             // Create fishing rod with specified upgrade level
@@ -527,7 +538,6 @@ namespace RL_Fishing
 
             // update the environment state every tick
             this.currentFishingData.Update(); 
-            
             // safely grab the latest action instruction from agent
             int action;
             float forceInjection;
@@ -602,7 +612,7 @@ namespace RL_Fishing
                         buttonPressedField?.SetValue(false); 
                         this.Monitor.Log("RL Action: Continuous Hold Flag Set (FALSE)", LogLevel.Trace);
                     }
-                    catch
+                    catch (Exception) 
                     {
                         // ignored
                     } 
